@@ -1,3 +1,11 @@
+import time
+# TODOS:
+# 1 rewrite verify function
+# 2 change how counting recursive calls works (add a seperate count calls class
+# and decorate?)
+# 3 add web scraper
+# 4 add AI reader for puzzles from pictures
+
 # Sudoku puzzle solver
 def print_puzzle(puzzle):
     puz_str = ''
@@ -21,7 +29,6 @@ def parse(grid):
         returns a triple of the rows, columns, and squares
         making up the grid'''
 
-
     rows = [grid[r:r+9] for r in range(0,81,9)]
     cols = [grid[c::9] for c in range(9)]
     sqrs = []
@@ -32,14 +39,18 @@ def parse(grid):
             sqrs.append(sqr)
 
     return rows, cols, sqrs
-        
-def solve(grid, i=0, tried=[], count=0):
+
+def solve(grid, get_all=False):
+    ''' Calls the _solve function with specified parameters '''
+    #Creates a copy of the passed in puzzle before passing to _solve
+    print('get_all:',get_all)
+    return _solve(grid[:], get_all=get_all)
+
+def _solve(grid, i=0, tried=[], count=0, get_all=False):
     count += 1
-    # Check the current square for contradictions
     cell = grid[i]
     #print('\nNEW SOLVE\ni:{}\ntried: {}\ncell: {}\ngrid:'.format(i, tried, cell))
-    #print_puzzle(grid)
-
+    # Check the current square for contradictions
     if cell is not '0':
         r, c = i//9 * 9, i%9
         s = (r//27) * 27 + (c//3) * 3
@@ -58,8 +69,6 @@ def solve(grid, i=0, tried=[], count=0):
         # if no solution exists, return None
         if cell in rcs:
             #print('No solution by contradiction')
-            #print_puzzle(grid)
-
             return None, count
         
         # find the next non-empty square and solve it
@@ -71,31 +80,37 @@ def solve(grid, i=0, tried=[], count=0):
         tried = []
 
     # At this point if the grid is full return a solution
-    if i is -1: return grid, count
-    
+    if i is -1:
+        return [grid[:]], count
+
+    answers = []
     for num in range(1, 10):
         if num in tried:
             continue
         
         grid[i] = str(num)
         tried.append(num)
-
-        answer, count = solve(grid, i, tried, count)
-        if answer is not None:
-            return answer, count
+        answer, this_count = _solve(grid, i, tried, get_all=get_all)
+        
+        if get_all: count += this_count
+        if answer:
+            if get_all: answers.extend(answer)
+            else: return answer, this_count
 
     # If there's no solution for this square, return things to normal
-    #print('Really no solution')
-    #print_puzzle(grid)
     grid[i] = '0'
-    return None, count
-
+    if get_all:
+        return answers, count
+    else:
+        return None, this_count
 
 def verify(rows, cols, sqrs):
     ''' Verify whether the rows, columns, and squares
-        passed in constitute an actual sudoku
-        solution '''
+        passed in could potentially constitute an actual sudoku
+        solution; that is, there are no contradictions among any
+        of them '''
     all_nums = {str(x) for x in range(1, 10)}
+    
     # Check rows
     for row in rows:
         if set(row) != all_nums:
@@ -117,22 +132,40 @@ def print_list(lst):
     print('\n'.join([str(item) for item in lst]))
     
 if __name__ == '__main__':
-    puzzle1 = list('006002304'+'002060000'+'007005060'+ \
+    puzzle = list('006002304'+'002060000'+'007005060'+ \
                    '860300702'+'059248630'+'301006085'+ \
                    '070100900'+'000090500'+'408500100')
 
-    puzzle2 = list('000000200'+'000260708'+'870000001'+ \
+    puzzle = list('000000200'+'000260708'+'870000001'+ \
                    '060901000'+'009070100'+'000405080'+ \
                    '600000049'+'108034000'+'007000000')
 
-    answer, count = solve(puzzle2[:])
+    puzzle = list('906070403'+'000400200'+'070023010'+ \
+                  '500000100'+'040208060'+'003000005'+ \
+                  '030700050'+'007005000'+'405010708')
+    get_all = True
+    #puzzle = ['0' for i in range(81)] # total number of possible solutions
+    start = time.time()
+    answer, count = solve(puzzle, get_all=get_all)
+    time_taken = time.time() - start
 
+    if not get_all: answer = [answer]
+    
     print('Problem')
-    print_puzzle(puzzle2)
+    print_puzzle(puzzle)
+    
+    print('Solutions')
+    print('# of solutions:', len(answer))
 
-    print('Solution')
-    print_puzzle(answer)
+    for i, a in enumerate(answer):
+        print('#', i)
+        print_puzzle(a)
+        
     print('number of recursive calls:', count)
 
-    assert verify(*parse(answer))
+    for a in answer:
+        assert verify(*parse(a))
+        
     print('Solution verified')
+    print('Time taken to solve:', time_taken)
+
