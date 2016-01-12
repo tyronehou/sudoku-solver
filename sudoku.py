@@ -43,13 +43,12 @@ def parse(grid):
 def solve(grid, get_all=False):
     ''' Calls the _solve function with specified parameters '''
     #Creates a copy of the passed in puzzle before passing to _solve
-    print('get_all:',get_all)
     return _solve(grid[:], get_all=get_all)
 
-def _solve(grid, i=0, tried=[], count=0, get_all=False):
-    count += 1
+def _solve(grid, i=0, tried=[], get_all=False):
     cell = grid[i]
     #print('\nNEW SOLVE\ni:{}\ntried: {}\ncell: {}\ngrid:'.format(i, tried, cell))
+
     # Check the current square for contradictions
     if cell is not '0':
         r, c = i//9 * 9, i%9
@@ -59,6 +58,7 @@ def _solve(grid, i=0, tried=[], count=0, get_all=False):
             sqr.extend(grid[s_row:s_row+3])
         
         #print('row: {}\n{}\ncol: {}\n{}\nsqr: {}\n{}'.format(r, row, c, col, s1, sqr))
+
         # In order not to match the current cell with itself
         row.pop(row.index(cell))
         col.pop(col.index(cell))
@@ -69,7 +69,7 @@ def _solve(grid, i=0, tried=[], count=0, get_all=False):
         # if no solution exists, return None
         if cell in rcs:
             #print('No solution by contradiction')
-            return None, count
+            return None, 1
         
         # find the next non-empty square and solve it
         try:
@@ -81,28 +81,29 @@ def _solve(grid, i=0, tried=[], count=0, get_all=False):
 
     # At this point if the grid is full return a solution
     if i is -1:
-        return [grid[:]], count
+        return [grid[:]], 1
 
     answers = []
+    count = 1
     for num in range(1, 10):
         if num in tried:
             continue
         
         grid[i] = str(num)
         tried.append(num)
-        answer, this_count = _solve(grid, i, tried, get_all=get_all)
-        
-        if get_all: count += this_count
+        answer, sub_count = _solve(grid, i, tried, get_all=get_all)
+
+        count += sub_count       
         if answer:
             if get_all: answers.extend(answer)
-            else: return answer, this_count
+            else: return answer, count
 
     # If there's no solution for this square, return things to normal
     grid[i] = '0'
     if get_all:
         return answers, count
     else:
-        return None, this_count
+        return None, count
 
 def verify(rows, cols, sqrs):
     ''' Verify whether the rows, columns, and squares
@@ -126,8 +127,14 @@ def verify(rows, cols, sqrs):
         if set(sqr) != all_nums:
             return False
 
-    return True
+    return True    
 
+def true_count():
+    with open(f_name, 'r') as f:
+        s = f.read()
+
+    return len(s)
+    
 def print_list(lst):
     print('\n'.join([str(item) for item in lst]))
     
@@ -160,12 +167,12 @@ if __name__ == '__main__':
     for i, a in enumerate(answer):
         print('#', i)
         print_puzzle(a)
-        
+
     print('number of recursive calls:', count)
 
-    for a in answer:
-        assert verify(*parse(a))
-        
-    print('Solution verified')
+    for i, a in enumerate(answer):
+        assert verify(*parse(a)), 'answer {} is wrong'.format(i)
+    print('Solution(s) verified')
+
     print('Time taken to solve:', time_taken)
 
