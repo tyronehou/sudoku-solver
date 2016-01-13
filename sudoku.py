@@ -127,13 +127,7 @@ def verify(rows, cols, sqrs):
         if set(sqr) != all_nums:
             return False
 
-    return True    
-
-def true_count():
-    with open(f_name, 'r') as f:
-        s = f.read()
-
-    return len(s)
+    return True
     
 def print_list(lst):
     print('\n'.join([str(item) for item in lst]))
@@ -147,16 +141,15 @@ if __name__ == '__main__':
                    '060901000'+'009070100'+'000405080'+ \
                    '600000049'+'108034000'+'007000000')
 
-    puzzle = list('906070403'+'000400200'+'070023010'+ \
-                  '500000100'+'040208060'+'003000005'+ \
-                  '030700050'+'007005000'+'405010708')
-    get_all = True
-    #puzzle = ['0' for i in range(81)] # total number of possible solutions
+#    puzzle = list('906070403'+'000400200'+'070023010'+ \
+#                  '500000100'+'040208060'+'003000005'+ \
+#                  '030700050'+'007005000'+'405010708')
+    get_all = False
+    puzzle = ['0' for i in range(81)] # total number of possible solutions
     start = time.time()
     answer, count = solve(puzzle, get_all=get_all)
     time_taken = time.time() - start
-
-    if not get_all: answer = [answer]
+    ratio = time_taken / len(answer)
     
     print('Problem')
     print_puzzle(puzzle)
@@ -175,4 +168,4 @@ if __name__ == '__main__':
     print('Solution(s) verified')
 
     print('Time taken to solve:', time_taken)
-
+    print('Average time per solution:', ratio)
